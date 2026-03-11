@@ -69,6 +69,12 @@ jobs:
           kubectl create secret generic jwt-secret \
             --from-literal=jwt-secret="$JWT"
 
+      - name: Deploy to EKS
+        run: |
+          kubectl apply -f k8s/
+          kubectl rollout restart deployment/users-deployment
+          kubectl rollout status deployment/users-deployment --timeout=120s
+
       - name: Install/Upgrade Prometheus + Grafana
         run: |
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -77,10 +83,4 @@ jobs:
             --namespace monitoring \
             --create-namespace \
             --values monitoring-values.yaml \
-            --wait --timeout 5m
-
-      - name: Deploy to EKS
-        run: |
-          kubectl apply -f k8s/
-          kubectl rollout restart deployment/users-deployment
-          kubectl rollout status deployment/users-deployment --timeout=120s
+            --wait --timeout 10m
