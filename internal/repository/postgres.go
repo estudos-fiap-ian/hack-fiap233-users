@@ -8,8 +8,41 @@ import (
 	"github.com/lib/pq"
 )
 
-type postgresRepository struct {
+type rowScanner interface {
+	Scan(dest ...any) error
+}
+
+type sqlRows interface {
+	Next() bool
+	Scan(dest ...any) error
+	Close() error
+	Err() error
+}
+
+type dbQuerier interface {
+	QueryRowContext(ctx context.Context, query string, args ...any) rowScanner
+	QueryContext(ctx context.Context, query string, args ...any) (sqlRows, error)
+	PingContext(ctx context.Context) error
+}
+
+type sqlDBAdapter struct {
 	db *sql.DB
+}
+
+func (a *sqlDBAdapter) QueryRowContext(ctx context.Context, query string, args ...any) rowScanner {
+	return a.db.QueryRowContext(ctx, query, args...)
+}
+
+func (a *sqlDBAdapter) QueryContext(ctx context.Context, query string, args ...any) (sqlRows, error) {
+	return a.db.QueryContext(ctx, query, args...)
+}
+
+func (a *sqlDBAdapter) PingContext(ctx context.Context) error {
+	return a.db.PingContext(ctx)
+}
+
+type postgresRepository struct {
+	db dbQuerier
 }
 
 type UserRepositoryBuilder struct {
@@ -21,7 +54,7 @@ func New() *UserRepositoryBuilder {
 }
 
 func (b *UserRepositoryBuilder) WithDB(db *sql.DB) *UserRepositoryBuilder {
-	b.repo.db = db
+	b.repo.db = &sqlDBAdapter{db: db}
 	return b
 }
 
