@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"testing"
 
 	"golang.org/x/crypto/bcrypt"
@@ -70,6 +71,15 @@ func TestRegister_EmailTaken(t *testing.T) {
 	_, err := svc.Register(context.Background(), "Alice", "alice@example.com", "password123")
 	if !errors.Is(err, ErrEmailTaken) {
 		t.Errorf("expected ErrEmailTaken, got %v", err)
+	}
+}
+
+func TestRegister_PasswordTooLong(t *testing.T) {
+	svc := newTestService(&mockRepo{})
+	// bcrypt rejects passwords longer than 72 bytes (ErrPasswordTooLong)
+	_, err := svc.Register(context.Background(), "Alice", "alice@example.com", strings.Repeat("x", 73))
+	if err == nil {
+		t.Fatal("expected error for password > 72 bytes")
 	}
 }
 
