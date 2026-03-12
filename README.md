@@ -1,6 +1,6 @@
 # hack-fiap233-users
 
-Microsserviço de usuários em Go.
+Microsserviço de usuários em Go...
 
 ## Endpoints
 
